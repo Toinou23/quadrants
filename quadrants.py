@@ -119,27 +119,119 @@ def trailing_ma(values, n):
     return out
 
 
-# ---------------------------------------------------------------- alerte email
-def email_alert(subject, text):
+# ---------------------------------------------------------------- abonnés & email
+SUBS_PATH = os.path.join(BASE, "subscribers.json")
+SUBJECT_SUB = "ABONNEMENT-QUADRANTS"
+SUBJECT_UNSUB = "STOP-QUADRANTS"
+
+
+def mail_creds():
     user = os.environ.get("MAIL_USER", "").strip()
     pwd = os.environ.get("MAIL_APP_PASSWORD", "").strip()
-    to = os.environ.get("MAIL_TO", "").strip() or user
-    if not user or not pwd:
-        print("Email non configuré (MAIL_USER / MAIL_APP_PASSWORD absents) — pas d'envoi.")
+    return (user, pwd) if user and pwd else (None, None)
+
+
+def load_subscribers():
+    if os.path.exists(SUBS_PATH):
+        with open(SUBS_PATH, encoding="utf-8") as f:
+            return json.load(f).get("abonnes", [])
+    return []
+
+
+def save_subscribers(subs):
+    with open(SUBS_PATH, "w", encoding="utf-8") as f:
+        json.dump({"abonnes": sorted(set(subs))}, f, ensure_ascii=False, indent=2)
+
+
+def process_inbox():
+    """Lit la boîte Gmail (IMAP) : traite les demandes d'abonnement / désabonnement
+    envoyées depuis le site ou depuis le lien de désinscription des emails."""
+    user, pwd = mail_creds()
+    if not user:
+        print("IMAP: identifiants absents — traitement des abonnements sauté.")
         return
+    import imaplib, email as email_mod, re as re_mod
+    from email.utils import parseaddr
+    subs = [s.lower() for s in load_subscribers()]
+    changed = False
+    try:
+        box = imaplib.IMAP4_SSL("imap.gmail.com", timeout=30)
+        box.login(user, pwd)
+        box.select("INBOX")
+        for token, action in ((SUBJECT_SUB, "add"), (SUBJECT_UNSUB, "remove")):
+            ok, ids = box.search(None, "UNSEEN", f'SUBJECT "{token}"')
+            if ok != "OK":
+                continue
+            for num in ids[0].split():
+                ok, data = box.fetch(num, "(RFC822)")
+                if ok != "OK":
+                    continue
+                msg = email_mod.message_from_bytes(data[0][1])
+                sender = parseaddr(msg.get("From", ""))[1].lower()
+                body = ""
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        if part.get_content_type() == "text/plain":
+                            body = part.get_payload(decode=True).decode("utf-8", "ignore")
+                            break
+                else:
+                    body = msg.get_payload(decode=True).decode("utf-8", "ignore")
+                found = re_mod.findall(r"[\w.+-]+@[\w-]+\.[\w.-]+", body)
+                target = (found[0].lower() if found else sender)
+                if not target:
+                    continue
+                if action == "add" and target not in subs:
+                    subs.append(target)
+                    changed = True
+                    print(f"IMAP: abonné ajouté : {target}")
+                elif action == "remove" and target in subs:
+                    subs.remove(target)
+                    changed = True
+                    print(f"IMAP: abonné retiré : {target}")
+                box.store(num, "+FLAGS", "\\Seen")
+        box.logout()
+    except Exception as e:
+        print(f"IMAP: erreur ({e}) — abonnements inchangés.")
+    if changed:
+        save_subscribers(subs)
+
+
+def unsubscribe_footer(user):
+    return (
+        f'<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0 12px">'
+        f'<p style="font-size:12px;color:#64748b;line-height:1.5">'
+        f'Cadre théorique de Charles Gave — ne constitue pas un conseil en investissement personnalisé.<br>'
+        f'<a href="mailto:{user}?subject={SUBJECT_UNSUB}&body=Merci%20de%20me%20d%C3%A9sabonner." '
+        f'style="display:inline-block;margin-top:8px;padding:8px 16px;background:#f1f5f9;'
+        f'color:#334155;text-decoration:none;border-radius:8px;font-weight:600">Se désinscrire</a></p>'
+    )
+
+
+def send_email(subject, html, recipients=None):
+    """Envoie en copie cachée à tous les abonnés (ou à la liste fournie)."""
+    user, pwd = mail_creds()
+    if not user:
+        print("Email non configuré (MAIL_USER / MAIL_APP_PASSWORD absents) — pas d'envoi.")
+        return False
+    recipients = recipients if recipients is not None else load_subscribers()
+    if not recipients:
+        print("Aucun abonné — pas d'envoi.")
+        return False
     import smtplib
     from email.mime.text import MIMEText
-    msg = MIMEText(text, "plain", "utf-8")
+    msg = MIMEText(html + unsubscribe_footer(user), "html", "utf-8")
     msg["Subject"] = subject
-    msg["From"] = user
-    msg["To"] = to
+    msg["From"] = f"Les 4 Quadrants <{user}>"
+    msg["To"] = user
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as s:
             s.login(user, pwd)
-            s.send_message(msg)
-        print(f"Email d'alerte envoyé à {to}.")
+            s.sendmail(user, [user] + list(recipients), msg.as_string())
+        print(f"Email « {subject} » envoyé à {len(recipients)} abonné(s).")
+        return True
     except Exception as e:
         print(f"Échec envoi email : {e}")
+        return False
 
 
 # ---------------------------------------------------------------- backtest
@@ -217,6 +309,8 @@ def main():
         refresh_data(key)
     else:
         print("ALPHAVANTAGE_KEY absent — calcul sur les données déjà présentes.")
+
+    process_inbox()  # abonnements / désabonnements en attente
 
     acwi = parse_monthly_adjusted(os.path.join(DATA, "acwi_monthly.json"))
     gld = parse_monthly_adjusted(os.path.join(DATA, "gld_monthly.json"))
@@ -318,17 +412,23 @@ def main():
         print(f"BACKTEST {p['nom']}: {p['final']} € ({p['total_pct']:+.1f}%, CAGR {p['cagr_pct']}%, DD max {p['maxdd_pct']}%)")
 
     if changement:
-        email_alert(
-            f"🚨 Changement de quadrant : {last['quadrant']}",
-            "Théorie des 4 cadrans de Charles Gave — bascule détectée.\n\n"
-            f"{prev_state['quadrant']}  →  {last['quadrant']} (mois : {last['mois']})\n"
-            f"Écarts vs moyenne mobile 7 ans : croissance {last['ecart_croissance_pct']:+.1f}% / "
-            f"inflation {last['ecart_inflation_pct']:+.1f}%\n\n"
-            f"Actif roi du nouveau cadran : {qmeta['actif_roi']}\n"
-            f"Actif à retirer (cadran opposé) : {qmeta['exclu']}\n"
-            f"Allocation type : {qmeta['allocations']}\n\n"
-            "Tableau de bord : consulte ton site GitHub Pages.\n"
-            "Cadre théorique de Gave — ne constitue pas un conseil personnalisé."
+        send_email(
+            f"🚨 Changement de cadran : {last['quadrant']}",
+            f"""<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#0f172a">
+            <h2 style="color:{qmeta['couleur']}">🚨 Bascule détectée : {last['quadrant']}</h2>
+            <p><b>{prev_state['quadrant']}</b> &rarr; <b>{last['quadrant']}</b> (mois : {last['mois']})</p>
+            <p>Écarts vs moyenne mobile 7 ans :<br>
+            &bull; croissance <b>{last['ecart_croissance_pct']:+.1f}&nbsp;%</b><br>
+            &bull; inflation <b>{last['ecart_inflation_pct']:+.1f}&nbsp;%</b></p>
+            <table style="width:100%;border-collapse:collapse;font-size:14px">
+              <tr><td style="padding:8px;background:#f8fafc;border:1px solid #e2e8f0"><b>Actif roi</b></td>
+                  <td style="padding:8px;border:1px solid #e2e8f0">{qmeta['actif_roi']}</td></tr>
+              <tr><td style="padding:8px;background:#f8fafc;border:1px solid #e2e8f0"><b>À retirer (cadran opposé)</b></td>
+                  <td style="padding:8px;border:1px solid #e2e8f0">{qmeta['exclu']}</td></tr>
+            </table>
+            <p style="font-size:14px;color:#475569">Allocation type : {qmeta['allocations']}</p>
+            <p style="font-size:14px">Le détail complet est sur le tableau de bord GitHub Pages.</p>
+            </div>"""
         )
 
 

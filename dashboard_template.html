@@ -2,183 +2,346 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
 <title>Les 4 Quadrants — Charles Gave</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root { --bg:#101418; --card:#1a2129; --txt:#e8e6e3; --muted:#9aa5b1; --line:#2c3540; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--txt); font:15px/1.5 "Segoe UI", system-ui, sans-serif; }
-  .wrap { max-width:1100px; margin:0 auto; padding:24px 16px 60px; }
-  h1 { font-size:1.5rem; margin:0 0 4px; }
-  .sub { color:var(--muted); margin-bottom:24px; font-size:.9rem; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:20px; }
-  .hero { display:flex; flex-wrap:wrap; gap:20px; align-items:center; border-left:8px solid var(--qcolor,#888); }
-  .hero .big { font-size:1.6rem; font-weight:700; }
-  .hero .since { color:var(--muted); }
-  .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.8rem; background:#2c3540; margin-right:6px; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-  @media (max-width:800px){ .grid2 { grid-template-columns:1fr; } }
-  .quad-box { position:relative; aspect-ratio:1; max-width:480px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
-  .quad-cell { padding:10px; font-size:.8rem; display:flex; flex-direction:column; justify-content:flex-start; opacity:.35; }
-  .quad-cell.active { opacity:1; outline:2px solid #fff2; }
-  .quad-cell b { font-size:.9rem; }
-  .marker { position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; border:3px solid #000; transform:translate(-50%,-50%); box-shadow:0 0 12px #fff8; z-index:5; }
-  .axis-label { position:absolute; color:var(--muted); font-size:.72rem; z-index:4; }
-  canvas.chart { width:100%; }
-  .timeline { display:flex; height:34px; border-radius:6px; overflow:hidden; margin-top:8px; }
+  :root {
+    --bg:#0b0f14; --bg2:#0f151d; --card:#141c26; --card2:#1a2432;
+    --txt:#eef2f6; --muted:#8b98a9; --line:#233042;
+    --radius:20px;
+  }
+  * { box-sizing:border-box; margin:0; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #16283f66 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 30%, #24193a44 0%, transparent 55%),
+      var(--bg);
+    color:var(--txt);
+    font:16px/1.55 "Inter", system-ui, sans-serif;
+    padding-bottom:60px;
+  }
+  .wrap { max-width:1060px; margin:0 auto; padding:0 16px; }
+
+  header { padding:34px 0 10px; }
+  .eyebrow { color:var(--muted); font-size:.78rem; letter-spacing:.18em; text-transform:uppercase; font-weight:600; }
+  h1 { font-family:"Fraunces", serif; font-weight:600; font-size:clamp(1.7rem, 5.5vw, 2.6rem); line-height:1.15; margin-top:6px; }
+  .maj { color:var(--muted); font-size:.85rem; margin-top:8px; }
+
+  .card {
+    background:linear-gradient(180deg, var(--card2), var(--card));
+    border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px; margin-top:18px;
+    box-shadow:0 10px 40px #0007;
+  }
+  h2 { font-size:1.02rem; font-weight:600; letter-spacing:.01em; margin-bottom:14px; }
+  .muted { color:var(--muted); font-size:.85rem; }
+
+  /* ---- héro ---- */
+  .hero { position:relative; overflow:hidden; padding:26px 22px; }
+  .hero::before {
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(120deg, var(--qcolor) 0%, transparent 55%);
+    opacity:.16; pointer-events:none;
+  }
+  .hero .label { color:var(--muted); font-size:.8rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; }
+  .hero .qname { font-family:"Fraunces", serif; font-size:clamp(1.6rem, 6vw, 2.3rem); color:var(--qcolor); margin:6px 0 2px; }
+  .hero .since { color:var(--muted); font-size:.92rem; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .pill {
+    background:#0d131b; border:1px solid var(--line); border-radius:99px;
+    padding:7px 14px; font-size:.82rem; font-weight:500;
+  }
+  .pill b { font-weight:800; }
+  .kingline { margin-top:16px; display:grid; gap:10px; font-size:.95rem; }
+  .kingline .lab { color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; font-weight:600; }
+  .kingline b { text-transform:capitalize; }
+
+  /* ---- carré des quadrants ---- */
+  .quad-box {
+    position:relative; aspect-ratio:1; max-width:440px; margin:0 auto;
+    display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+    border-radius:16px; overflow:hidden; border:1px solid var(--line);
+  }
+  .qc { padding:12px 10px; opacity:.38; transition:opacity .3s; display:flex; flex-direction:column; gap:2px; }
+  .qc b { font-size:.82rem; line-height:1.25; }
+  .qc small { color:var(--muted); font-size:.72rem; line-height:1.3; }
+  .qc.active { opacity:1; }
+  .marker {
+    position:absolute; width:15px; height:15px; border-radius:50%;
+    background:#fff; border:3px solid #0b0f14; transform:translate(-50%,-50%);
+    box-shadow:0 0 0 4px #ffffff33, 0 0 18px #fff9; z-index:5;
+  }
+  .ax { position:absolute; color:var(--muted); font-size:.68rem; font-weight:600; letter-spacing:.08em; z-index:4; }
+
+  /* ---- backtest ---- */
+  .bt-stats { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-top:14px; }
+  @media (min-width:720px){ .bt-stats { grid-template-columns:repeat(4, 1fr); } }
+  .stat {
+    background:#0d131b; border:1px solid var(--line); border-radius:14px; padding:14px;
+    border-top:3px solid var(--pcolor);
+  }
+  .stat .name { font-size:.78rem; font-weight:600; color:var(--muted); line-height:1.3; min-height:2.1em; }
+  .stat .val { font-size:1.35rem; font-weight:800; margin-top:4px; letter-spacing:-.01em; }
+  .stat .sub { font-size:.75rem; color:var(--muted); margin-top:2px; }
+  .stat .gain { font-weight:700; font-size:.85rem; }
+  .up { color:#34d399; } .down { color:#f87171; }
+  .bt-note { margin-top:14px; font-size:.82rem; color:var(--muted); line-height:1.5; }
+
+  canvas { width:100% !important; }
+  .chartbox { position:relative; height:300px; }
+  @media (min-width:720px){ .chartbox { height:360px; } }
+
+  /* ---- timeline ---- */
+  .timeline { display:flex; height:30px; border-radius:8px; overflow:hidden; }
   .timeline div { height:100%; }
-  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:10px; font-size:.8rem; color:var(--muted); }
-  .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; background:var(--c); }
-  table { width:100%; border-collapse:collapse; font-size:.88rem; }
-  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
-  th { color:var(--muted); font-weight:600; }
-  .muted { color:var(--muted); font-size:.82rem; }
-  h2 { font-size:1.05rem; margin:0 0 12px; }
+  .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:.78rem; color:var(--muted); }
+  .legend span::before { content:""; display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; background:var(--c); }
+
+  table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; }
+
+  footer { margin-top:26px; color:var(--muted); font-size:.78rem; line-height:1.6; }
+
+  /* ---- abonnement ---- */
+  .sub-card { border:1px solid #f59e0b44; }
+  .sub-row { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .sub-row input {
+    flex:1; min-width:200px; background:#0d131b; border:1px solid var(--line);
+    border-radius:12px; padding:13px 16px; color:var(--txt); font:inherit; font-size:.95rem;
+  }
+  .sub-row input:focus { outline:none; border-color:#f59e0b88; }
+  .sub-row button {
+    background:linear-gradient(120deg, #f59e0b, #ef7c1b); color:#1a1206; border:none;
+    border-radius:12px; padding:13px 22px; font:inherit; font-weight:800; font-size:.95rem;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .sub-row button:active { transform:scale(.97); }
+  .sub-hint { margin-top:10px; font-size:.78rem; color:var(--muted); line-height:1.5; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Les 4 Quadrants de Charles Gave</h1>
-  <div class="sub" id="sub"></div>
+  <header>
+    <div class="eyebrow">Théorie des 4 cadrans · Charles Gave</div>
+    <h1>Où en est le cycle&nbsp;?</h1>
+    <div class="maj" id="maj"></div>
+  </header>
 
   <div class="card hero" id="hero">
-    <div>
-      <div class="big" id="qname"></div>
-      <div class="since" id="qsince"></div>
-      <div style="margin-top:8px">
-        <span class="badge" id="bg-growth"></span>
-        <span class="badge" id="bg-infl"></span>
-      </div>
+    <div class="label">Cadran actuel</div>
+    <div class="qname" id="qname"></div>
+    <div class="since" id="qsince"></div>
+    <div class="pills">
+      <span class="pill" id="pill-g"></span>
+      <span class="pill" id="pill-i"></span>
     </div>
-    <div style="flex:1; min-width:260px">
-      <b>Allocation type (Gave)</b>
-      <div id="alloc" class="muted" style="font-size:.95rem; color:var(--txt)"></div>
-    </div>
-  </div>
-
-  <div class="grid2">
-    <div class="card">
-      <h2>Position actuelle</h2>
-      <div class="quad-box" id="quadbox">
-        <div class="quad-cell" data-q="recession_inflationniste"><b>Récession inflationniste</b><span class="muted">stagflation — or, cash</span></div>
-        <div class="quad-cell" data-q="boom_inflationniste"><b>Boom inflationniste</b><span class="muted">actions value, matières 1ères</span></div>
-        <div class="quad-cell" data-q="depression_deflationniste"><b>Dépression déflationniste</b><span class="muted">obligations longues</span></div>
-        <div class="quad-cell" data-q="boom_deflationniste"><b>Boom déflationniste</b><span class="muted">actions de croissance</span></div>
-        <div class="marker" id="marker"></div>
-        <div class="axis-label" style="right:6px; top:50%; transform:translateY(-120%)">croissance →</div>
-        <div class="axis-label" style="left:6px; top:50%; transform:translateY(-120%)">← récession</div>
-        <div class="axis-label" style="left:50%; top:4px; transform:translateX(8px)">inflation ↑</div>
-        <div class="axis-label" style="left:50%; bottom:4px; transform:translateX(8px)">déflation ↓</div>
-      </div>
-      <p class="muted" style="margin-bottom:0">La position = écart (%) de chaque ratio à sa moyenne mobile 7 ans (échelle ±40 %, écrêtée).</p>
-    </div>
-
-    <div class="card">
-      <h2>Historique des quadrants</h2>
-      <div class="timeline" id="timeline"></div>
-      <div class="legend" id="tlegend"></div>
-      <h2 style="margin-top:20px">Dernières bascules</h2>
-      <table id="ttable"><thead><tr><th>Mois</th><th>De</th><th>Vers</th></tr></thead><tbody></tbody></table>
+    <div class="kingline">
+      <div><div class="lab">Actif roi</div><b id="king" style="text-transform:none"></b></div>
+      <div><div class="lab">À retirer (cadran opposé)</div><b id="exclu"></b></div>
     </div>
   </div>
 
   <div class="card">
-    <h2>Axe croissance — ACWI / WTI (échelle log)</h2>
-    <canvas id="chartGrowth" class="chart" height="110"></canvas>
-  </div>
-  <div class="card">
-    <h2>Axe inflation — Or (GLD) / Obligations longues (TLT) (échelle log)</h2>
-    <canvas id="chartInfl" class="chart" height="110"></canvas>
+    <h2>Position dans les 4 cadrans</h2>
+    <div class="quad-box" id="quadbox">
+      <div class="qc" data-q="recession_inflationniste"><b>Récession inflationniste</b><small>cash dans la meilleure monnaie</small></div>
+      <div class="qc" data-q="boom_inflationniste"><b>Croissance inflationniste</b><small>or, valeurs de rareté</small></div>
+      <div class="qc" data-q="depression_deflationniste"><b>Récession déflationniste</b><small>obligations d'État</small></div>
+      <div class="qc" data-q="boom_deflationniste"><b>Croissance déflationniste</b><small>valeurs d'efficacité</small></div>
+      <div class="marker" id="marker"></div>
+      <div class="ax" style="right:8px; top:50%; transform:translateY(-130%)">CROISSANCE →</div>
+      <div class="ax" style="left:8px; top:50%; transform:translateY(-130%)">← RÉCESSION</div>
+      <div class="ax" style="left:50%; top:6px; transform:translateX(8px)">INFLATION ↑</div>
+      <div class="ax" style="left:50%; bottom:6px; transform:translateX(8px)">DÉFLATION ↓</div>
+    </div>
+    <p class="muted" style="margin-top:12px">Position = écart de chaque ratio à sa moyenne mobile 7 ans (échelle ±40&nbsp;%, écrêtée).</p>
   </div>
 
-  <p class="muted">Méthode : ratios mensuels comparés à leur moyenne mobile 7 ans (84 mois), selon Charles Gave.
-  Instruments (USD) : ACWI dividendes réinvestis (monde), WTI spot, GLD (or), TLT coupons réinvestis (obligations ~20 ans et +).
-  Document d'information — ne constitue pas un conseil en investissement.</p>
+  <div class="card">
+    <h2>La théorie à l'épreuve — 4 portefeuilles depuis 2016</h2>
+    <div class="chartbox"><canvas id="chartBT"></canvas></div>
+    <div class="bt-stats" id="btstats"></div>
+    <p class="bt-note" id="btnote"></p>
+  </div>
+
+  <div class="card">
+    <h2>Ratio 1 — ETF World / Pétrole WTI <span class="muted">(axe croissance)</span></h2>
+    <div class="chartbox" style="height:240px"><canvas id="chartG"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h2>Ratio 2 — Or / Obligations longues <span class="muted">(axe inflation)</span></h2>
+    <div class="chartbox" style="height:240px"><canvas id="chartI"></canvas></div>
+  </div>
+
+  <div class="card sub-card">
+    <h2>🔔 Être alerté par email</h2>
+    <p class="muted">Alerte immédiate à chaque changement de cadran + la news hebdo chaque
+    vendredi soir (état des boussoles, actifs, actualité liée aux quadrants).
+    Désinscription en un clic dans chaque email.</p>
+    <div class="sub-row">
+      <input type="email" id="sub-email" placeholder="ton@email.fr" autocomplete="email" inputmode="email">
+      <button id="sub-btn">S'abonner</button>
+    </div>
+    <p class="sub-hint">L'abonnement s'effectue par un email pré-rempli : ton application
+    mail s'ouvre, appuie simplement sur «&nbsp;Envoyer&nbsp;». L'inscription est prise en
+    compte automatiquement lors de la mise à jour suivante (chaque soir de semaine).</p>
+  </div>
+
+  <div class="card">
+    <h2>Histoire des cadrans</h2>
+    <div class="timeline" id="timeline"></div>
+    <div class="legend" id="tlegend"></div>
+    <h2 style="margin-top:22px">Dernières bascules</h2>
+    <table id="ttable"><thead><tr><th>Mois</th><th>De</th><th>Vers</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <footer>
+    Méthode : ratios mensuels comparés à leur moyenne mobile 7 ans (84 mois), selon Charles Gave.
+    Instruments (USD, dividendes/coupons réinvestis) : ACWI (monde), WTI spot, GLD (or), TLT (obligations 20 ans et +).
+    Backtest : cash rémunéré à 0&nbsp;%, sans frais ni fiscalité, en USD (affiché en «&nbsp;€&nbsp;» par convention).
+    Les performances passées ne préjugent pas des performances futures. Document d'information —
+    ne constitue pas un conseil en investissement.
+  </footer>
 </div>
 
 <script>
 const DATA = __DATA__;
-const { state, rows, transitions, quadrants } = DATA;
+const { state, rows, transitions, quadrants, backtest } = DATA;
+const fmtEUR = v => v.toLocaleString("fr-FR", {maximumFractionDigits:0}) + " €";
+const sign = v => (v >= 0 ? "+" : "") + v.toLocaleString("fr-FR");
 
-document.getElementById('sub').textContent =
-  `Dernière mise à jour : ${state.date_calcul} · données jusqu'à ${state.dernier_mois}`;
+document.getElementById("maj").textContent =
+  `Mise à jour ${state.date_calcul} · données jusqu'à ${state.dernier_mois} · actualisation automatique chaque soir`;
 
 const q = quadrants[state.quadrant_id];
-document.getElementById('hero').style.setProperty('--qcolor', q.couleur);
-document.getElementById('qname').textContent = state.quadrant;
-document.getElementById('qname').style.color = q.couleur;
-document.getElementById('qsince').textContent = `depuis ${state.depuis}`;
-document.getElementById('alloc').textContent = state.allocations;
-document.getElementById('bg-growth').textContent =
-  `croissance : ${state.ecart_croissance_pct >= 0 ? '+' : ''}${state.ecart_croissance_pct} % vs MM7a`;
-document.getElementById('bg-infl').textContent =
-  `inflation : ${state.ecart_inflation_pct >= 0 ? '+' : ''}${state.ecart_inflation_pct} % vs MM7a`;
+const hero = document.getElementById("hero");
+hero.style.setProperty("--qcolor", q.couleur);
+document.getElementById("qname").textContent = state.quadrant;
+document.getElementById("qsince").textContent = `depuis ${state.depuis}`;
+document.getElementById("pill-g").innerHTML = `Croissance <b>${sign(state.ecart_croissance_pct)}&nbsp;%</b> vs MM7a`;
+document.getElementById("pill-i").innerHTML = `Inflation <b>${sign(state.ecart_inflation_pct)}&nbsp;%</b> vs MM7a`;
+document.getElementById("king").textContent = state.actif_roi;
+document.getElementById("exclu").textContent = state.exclu;
 
-// --- position dans le carré ---
-document.querySelectorAll('.quad-cell').forEach(c => {
+/* carré */
+document.querySelectorAll(".qc").forEach(c => {
   const meta = quadrants[c.dataset.q];
-  c.style.background = meta.couleur + '33';
-  if (c.dataset.q === state.quadrant_id) c.classList.add('active');
+  c.style.background = meta.couleur + "26";
+  if (c.dataset.q === state.quadrant_id) c.classList.add("active");
 });
-const clamp = (v) => Math.max(-40, Math.min(40, v));
-const mk = document.getElementById('marker');
-mk.style.left = (50 + clamp(state.ecart_croissance_pct) / 40 * 48) + '%';
-mk.style.top  = (50 - clamp(state.ecart_inflation_pct) / 40 * 48) + '%';
+const clamp = v => Math.max(-40, Math.min(40, v));
+const mk = document.getElementById("marker");
+mk.style.left = (50 + clamp(state.ecart_croissance_pct) / 40 * 47) + "%";
+mk.style.top  = (50 - clamp(state.ecart_inflation_pct) / 40 * 47) + "%";
 
-// --- timeline ---
-const tl = document.getElementById('timeline');
-let cur = null, start = 0;
-const segs = [];
-rows.forEach((r, i) => {
-  if (r.quadrant_id !== cur) { if (cur) segs.push({ q: cur, n: i - start }); cur = r.quadrant_id; start = i; }
+/* ---- backtest ---- */
+const bt = backtest;
+new Chart(document.getElementById("chartBT"), {
+  type: "line",
+  data: {
+    labels: bt.labels,
+    datasets: bt.portfolios.map(p => ({
+      label: p.nom, data: p.serie, borderColor: p.couleur,
+      borderWidth: p.id === "p2" ? 2.6 : 1.6, pointRadius: 0, tension: .2,
+    }))
+  },
+  options: {
+    animation:false, responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:"index", intersect:false },
+    plugins:{
+      legend:{ labels:{ color:"#eef2f6", boxWidth:14, font:{size:11} } },
+      tooltip:{ callbacks:{ label: c => ` ${c.dataset.label} : ${fmtEUR(c.parsed.y)}` } }
+    },
+    scales:{
+      y:{ grid:{color:"#233042"}, ticks:{ color:"#8b98a9", callback:v=>fmtEUR(v) } },
+      x:{ grid:{display:false}, ticks:{ color:"#8b98a9", maxTicksLimit:8 } }
+    }
+  }
 });
-segs.push({ q: cur, n: rows.length - start });
-segs.forEach(s => {
-  const d = document.createElement('div');
-  d.style.width = (s.n / rows.length * 100) + '%';
-  d.style.background = quadrants[s.q].couleur;
-  d.title = quadrants[s.q].nom;
-  tl.appendChild(d);
+const st = document.getElementById("btstats");
+bt.portfolios.forEach(p => {
+  const d = document.createElement("div");
+  d.className = "stat";
+  d.style.setProperty("--pcolor", p.couleur);
+  const cls = p.total_pct >= 0 ? "up" : "down";
+  d.innerHTML = `<div class="name">${p.nom}</div>
+    <div class="val">${fmtEUR(p.final)}</div>
+    <div class="gain ${cls}">${sign(p.total_pct)} %</div>
+    <div class="sub">${p.cagr_pct} %/an · pire creux ${p.maxdd_pct} %</div>`;
+  st.appendChild(d);
 });
-const lg = document.getElementById('tlegend');
-Object.values(quadrants).forEach(m => {
-  const s = document.createElement('span');
-  s.style.setProperty('--c', m.couleur);
-  s.textContent = m.nom;
-  lg.appendChild(s);
-});
+const p2 = bt.portfolios.find(p => p.id === "p2");
+document.getElementById("btnote").textContent =
+  `Départ ${bt.labels[0]} : 1000 € par actif (cash, or, obligations, ETF World). ` +
+  `P2 applique la règle du schéma des 4 cadrans : à chaque croisement d'un ratio avec sa moyenne mobile 7 ans qui change le cadran, ` +
+  `l'actif roi du cadran diagonalement opposé est vendu et réparti à parts égales sur les trois autres (${p2.nb_arbitrages} arbitrages depuis 2016). ` +
+  `P3 et P4 mesurent le coût d'opportunité d'un pari unique.`;
 
-// --- table transitions ---
-const tb = document.querySelector('#ttable tbody');
-transitions.slice(-8).reverse().forEach(t => {
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td>${t.mois}</td><td style="color:${quadrants[t.de_id].couleur}">${t.de}</td>` +
-                 `<td style="color:${quadrants[t.vers_id].couleur}">${t.vers}</td>`;
-  tb.appendChild(tr);
-});
-
-// --- graphiques ---
-const labels = rows.map(r => r.mois);
-function mkChart(id, ratioKey, maKey, color) {
+/* ---- ratios ---- */
+function ratioChart(id, rkey, mkey, color) {
   new Chart(document.getElementById(id), {
-    type: 'line',
-    data: { labels, datasets: [
-      { label: 'Ratio', data: rows.map(r => r[ratioKey]), borderColor: color, borderWidth: 1.6, pointRadius: 0 },
-      { label: 'Moyenne mobile 7 ans', data: rows.map(r => r[maKey]), borderColor: '#9aa5b1', borderDash: [6,4], borderWidth: 1.4, pointRadius: 0 },
+    type:"line",
+    data:{ labels: rows.map(r=>r.mois), datasets:[
+      { label:"Ratio", data:rows.map(r=>r[rkey]), borderColor:color, borderWidth:1.8, pointRadius:0, tension:.2 },
+      { label:"Moyenne mobile 7 ans", data:rows.map(r=>r[mkey]), borderColor:"#8b98a9", borderDash:[6,4], borderWidth:1.3, pointRadius:0 },
     ]},
-    options: {
-      animation: false, responsive: true,
-      scales: {
-        y: { type: 'logarithmic', grid: { color: '#2c3540' }, ticks: { color: '#9aa5b1' } },
-        x: { grid: { display: false }, ticks: { color: '#9aa5b1', maxTicksLimit: 14 } }
-      },
-      plugins: { legend: { labels: { color: '#e8e6e3' } } }
+    options:{
+      animation:false, responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:"#eef2f6", boxWidth:14, font:{size:11} } } },
+      scales:{
+        y:{ type:"logarithmic", grid:{color:"#233042"}, ticks:{color:"#8b98a9", maxTicksLimit:6} },
+        x:{ grid:{display:false}, ticks:{color:"#8b98a9", maxTicksLimit:8} }
+      }
     }
   });
 }
-mkChart('chartGrowth', 'ratio_croissance', 'ma7_croissance', '#3a9d5d');
-mkChart('chartInfl', 'ratio_inflation', 'ma7_inflation', '#e07b39');
+ratioChart("chartG", "ratio_croissance", "ma7_croissance", "#10b981");
+ratioChart("chartI", "ratio_inflation", "ma7_inflation", "#f59e0b");
+
+/* ---- timeline ---- */
+const tl = document.getElementById("timeline");
+let cur=null, start=0; const segs=[];
+rows.forEach((r,i)=>{ if(r.quadrant_id!==cur){ if(cur) segs.push({q:cur,n:i-start}); cur=r.quadrant_id; start=i; }});
+segs.push({q:cur, n:rows.length-start});
+segs.forEach(s=>{
+  const d=document.createElement("div");
+  d.style.width=(s.n/rows.length*100)+"%";
+  d.style.background=quadrants[s.q].couleur;
+  d.title=quadrants[s.q].nom;
+  tl.appendChild(d);
+});
+const lg=document.getElementById("tlegend");
+Object.values(quadrants).forEach(m=>{
+  const s=document.createElement("span");
+  s.style.setProperty("--c", m.couleur);
+  s.textContent=m.nom;
+  lg.appendChild(s);
+});
+/* ---- abonnement email ---- */
+const SUB_ADDR = ["zelooser023", "gmail.com"].join("@"); // assemblée en JS pour limiter le spam
+document.getElementById("sub-btn").addEventListener("click", () => {
+  const v = document.getElementById("sub-email").value.trim();
+  const body = v
+    ? `Merci de m'abonner aux alertes des 4 Quadrants : ${v}`
+    : "Merci de m'abonner aux alertes des 4 Quadrants (adresse de cet email).";
+  location.href = `mailto:${SUB_ADDR}?subject=ABONNEMENT-QUADRANTS&body=${encodeURIComponent(body)}`;
+});
+
+const tb=document.querySelector("#ttable tbody");
+transitions.slice(-8).reverse().forEach(t=>{
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td>${t.mois}</td><td style="color:${quadrants[t.de_id].couleur}">${t.de}</td>`+
+               `<td style="color:${quadrants[t.vers_id].couleur}">${t.vers}</td>`;
+  tb.appendChild(tr);
+});
 </script>
 </body>
 </html>
