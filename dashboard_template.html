@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les 4 Quadrants — Charles Gave</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { --bg:#101418; --card:#1a2129; --txt:#e8e6e3; --muted:#9aa5b1; --line:#2c3540; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  .wrap { max-width:1100px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:1.5rem; margin:0 0 4px; }
+  .sub { color:var(--muted); margin-bottom:24px; font-size:.9rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:20px; }
+  .hero { display:flex; flex-wrap:wrap; gap:20px; align-items:center; border-left:8px solid var(--qcolor,#888); }
+  .hero .big { font-size:1.6rem; font-weight:700; }
+  .hero .since { color:var(--muted); }
+  .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.8rem; background:#2c3540; margin-right:6px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:800px){ .grid2 { grid-template-columns:1fr; } }
+  .quad-box { position:relative; aspect-ratio:1; max-width:480px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .quad-cell { padding:10px; font-size:.8rem; display:flex; flex-direction:column; justify-content:flex-start; opacity:.35; }
+  .quad-cell.active { opacity:1; outline:2px solid #fff2; }
+  .quad-cell b { font-size:.9rem; }
+  .marker { position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; border:3px solid #000; transform:translate(-50%,-50%); box-shadow:0 0 12px #fff8; z-index:5; }
+  .axis-label { position:absolute; color:var(--muted); font-size:.72rem; z-index:4; }
+  canvas.chart { width:100%; }
+  .timeline { display:flex; height:34px; border-radius:6px; overflow:hidden; margin-top:8px; }
+  .timeline div { height:100%; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:10px; font-size:.8rem; color:var(--muted); }
+  .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; background:var(--c); }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; }
+  .muted { color:var(--muted); font-size:.82rem; }
+  h2 { font-size:1.05rem; margin:0 0 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Les 4 Quadrants de Charles Gave</h1>
+  <div class="sub" id="sub"></div>
+
+  <div class="card hero" id="hero">
+    <div>
+      <div class="big" id="qname"></div>
+      <div class="since" id="qsince"></div>
+      <div style="margin-top:8px">
+        <span class="badge" id="bg-growth"></span>
+        <span class="badge" id="bg-infl"></span>
+      </div>
+    </div>
+    <div style="flex:1; min-width:260px">
+      <b>Allocation type (Gave)</b>
+      <div id="alloc" class="muted" style="font-size:.95rem; color:var(--txt)"></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Position actuelle</h2>
+      <div class="quad-box" id="quadbox">
+        <div class="quad-cell" data-q="recession_inflationniste"><b>Récession inflationniste</b><span class="muted">stagflation — or, cash</span></div>
+        <div class="quad-cell" data-q="boom_inflationniste"><b>Boom inflationniste</b><span class="muted">actions value, matières 1ères</span></div>
+        <div class="quad-cell" data-q="depression_deflationniste"><b>Dépression déflationniste</b><span class="muted">obligations longues</span></div>
+        <div class="quad-cell" data-q="boom_deflationniste"><b>Boom déflationniste</b><span class="muted">actions de croissance</span></div>
+        <div class="marker" id="marker"></div>
+        <div class="axis-label" style="right:6px; top:50%; transform:translateY(-120%)">croissance →</div>
+        <div class="axis-label" style="left:6px; top:50%; transform:translateY(-120%)">← récession</div>
+        <div class="axis-label" style="left:50%; top:4px; transform:translateX(8px)">inflation ↑</div>
+        <div class="axis-label" style="left:50%; bottom:4px; transform:translateX(8px)">déflation ↓</div>
+      </div>
+      <p class="muted" style="margin-bottom:0">La position = écart (%) de chaque ratio à sa moyenne mobile 7 ans (échelle ±40 %, écrêtée).</p>
+    </div>
+
+    <div class="card">
+      <h2>Historique des quadrants</h2>
+      <div class="timeline" id="timeline"></div>
+      <div class="legend" id="tlegend"></div>
+      <h2 style="margin-top:20px">Dernières bascules</h2>
+      <table id="ttable"><thead><tr><th>Mois</th><th>De</th><th>Vers</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Axe croissance — ACWI / WTI (échelle log)</h2>
+    <canvas id="chartGrowth" class="chart" height="110"></canvas>
+  </div>
+  <div class="card">
+    <h2>Axe inflation — Or (GLD) / Obligations longues (TLT) (échelle log)</h2>
+    <canvas id="chartInfl" class="chart" height="110"></canvas>
+  </div>
+
+  <p class="muted">Méthode : ratios mensuels comparés à leur moyenne mobile 7 ans (84 mois), selon Charles Gave.
+  Instruments (USD) : ACWI dividendes réinvestis (monde), WTI spot, GLD (or), TLT coupons réinvestis (obligations ~20 ans et +).
+  Document d'information — ne constitue pas un conseil en investissement.</p>
+</div>
+
+<script>
+const DATA = __DATA__;
+const { state, rows, transitions, quadrants } = DATA;
+
+document.getElementById('sub').textContent =
+  `Dernière mise à jour : ${state.date_calcul} · données jusqu'à ${state.dernier_mois}`;
+
+const q = quadrants[state.quadrant_id];
+document.getElementById('hero').style.setProperty('--qcolor', q.couleur);
+document.getElementById('qname').textContent = state.quadrant;
+document.getElementById('qname').style.color = q.couleur;
+document.getElementById('qsince').textContent = `depuis ${state.depuis}`;
+document.getElementById('alloc').textContent = state.allocations;
+document.getElementById('bg-growth').textContent =
+  `croissance : ${state.ecart_croissance_pct >= 0 ? '+' : ''}${state.ecart_croissance_pct} % vs MM7a`;
+document.getElementById('bg-infl').textContent =
+  `inflation : ${state.ecart_inflation_pct >= 0 ? '+' : ''}${state.ecart_inflation_pct} % vs MM7a`;
+
+// --- position dans le carré ---
+document.querySelectorAll('.quad-cell').forEach(c => {
+  const meta = quadrants[c.dataset.q];
+  c.style.background = meta.couleur + '33';
+  if (c.dataset.q === state.quadrant_id) c.classList.add('active');
+});
+const clamp = (v) => Math.max(-40, Math.min(40, v));
+const mk = document.getElementById('marker');
+mk.style.left = (50 + clamp(state.ecart_croissance_pct) / 40 * 48) + '%';
+mk.style.top  = (50 - clamp(state.ecart_inflation_pct) / 40 * 48) + '%';
+
+// --- timeline ---
+const tl = document.getElementById('timeline');
+let cur = null, start = 0;
+const segs = [];
+rows.forEach((r, i) => {
+  if (r.quadrant_id !== cur) { if (cur) segs.push({ q: cur, n: i - start }); cur = r.quadrant_id; start = i; }
+});
+segs.push({ q: cur, n: rows.length - start });
+segs.forEach(s => {
+  const d = document.createElement('div');
+  d.style.width = (s.n / rows.length * 100) + '%';
+  d.style.background = quadrants[s.q].couleur;
+  d.title = quadrants[s.q].nom;
+  tl.appendChild(d);
+});
+const lg = document.getElementById('tlegend');
+Object.values(quadrants).forEach(m => {
+  const s = document.createElement('span');
+  s.style.setProperty('--c', m.couleur);
+  s.textContent = m.nom;
+  lg.appendChild(s);
+});
+
+// --- table transitions ---
+const tb = document.querySelector('#ttable tbody');
+transitions.slice(-8).reverse().forEach(t => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${t.mois}</td><td style="color:${quadrants[t.de_id].couleur}">${t.de}</td>` +
+                 `<td style="color:${quadrants[t.vers_id].couleur}">${t.vers}</td>`;
+  tb.appendChild(tr);
+});
+
+// --- graphiques ---
+const labels = rows.map(r => r.mois);
+function mkChart(id, ratioKey, maKey, color) {
+  new Chart(document.getElementById(id), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Ratio', data: rows.map(r => r[ratioKey]), borderColor: color, borderWidth: 1.6, pointRadius: 0 },
+      { label: 'Moyenne mobile 7 ans', data: rows.map(r => r[maKey]), borderColor: '#9aa5b1', borderDash: [6,4], borderWidth: 1.4, pointRadius: 0 },
+    ]},
+    options: {
+      animation: false, responsive: true,
+      scales: {
+        y: { type: 'logarithmic', grid: { color: '#2c3540' }, ticks: { color: '#9aa5b1' } },
+        x: { grid: { display: false }, ticks: { color: '#9aa5b1', maxTicksLimit: 14 } }
+      },
+      plugins: { legend: { labels: { color: '#e8e6e3' } } }
+    }
+  });
+}
+mkChart('chartGrowth', 'ratio_croissance', 'ma7_croissance', '#3a9d5d');
+mkChart('chartInfl', 'ratio_inflation', 'ma7_inflation', '#e07b39');
+</script>
+</body>
+</html>
