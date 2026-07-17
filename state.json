@@ -1,0 +1,93 @@
+{
+  "date_calcul": "2026-07-17",
+  "dernier_mois": "2026-06",
+  "quadrant_id": "boom_inflationniste",
+  "quadrant": "Croissance inflationniste",
+  "depuis": "2024-05",
+  "actif_roi": "Or, valeurs de rareté",
+  "exclu": "obligations",
+  "allocations": "Or, valeurs de rareté, matières premières, immobilier. À retirer : obligations longues.",
+  "ecart_croissance_pct": 26.69,
+  "ecart_inflation_pct": 88.51,
+  "changement_detecte": false,
+  "quadrant_precedent": null,
+  "transitions": [
+    {
+      "mois": "2020-07",
+      "de": "Croissance déflationniste",
+      "vers": "Croissance inflationniste",
+      "de_id": "boom_deflationniste",
+      "vers_id": "boom_inflationniste"
+    },
+    {
+      "mois": "2020-11",
+      "de": "Croissance inflationniste",
+      "vers": "Croissance déflationniste",
+      "de_id": "boom_inflationniste",
+      "vers_id": "boom_deflationniste"
+    },
+    {
+      "mois": "2020-12",
+      "de": "Croissance déflationniste",
+      "vers": "Croissance inflationniste",
+      "de_id": "boom_deflationniste",
+      "vers_id": "boom_inflationniste"
+    },
+    {
+      "mois": "2021-10",
+      "de": "Croissance inflationniste",
+      "vers": "Récession inflationniste",
+      "de_id": "boom_inflationniste",
+      "vers_id": "recession_inflationniste"
+    },
+    {
+      "mois": "2021-12",
+      "de": "Récession inflationniste",
+      "vers": "Croissance inflationniste",
+      "de_id": "recession_inflationniste",
+      "vers_id": "boom_inflationniste"
+    },
+    {
+      "mois": "2022-01",
+      "de": "Croissance inflationniste",
+      "vers": "Récession inflationniste",
+      "de_id": "boom_inflationniste",
+      "vers_id": "recession_inflationniste"
+    },
+    {
+      "mois": "2023-06",
+      "de": "Récession inflationniste",
+      "vers": "Croissance inflationniste",
+      "de_id": "recession_inflationniste",
+      "vers_id": "boom_inflationniste"
+    },
+    {
+      "mois": "2023-08",
+      "de": "Croissance inflationniste",
+      "vers": "Récession inflationniste",
+      "de_id": "boom_inflationniste",
+      "vers_id": "recession_inflationniste"
+    },
+    {
+      "mois": "2023-12",
+      "de": "Récession inflationniste",
+      "vers": "Croissance inflationniste",
+      "de_id": "recession_inflationniste",
+      "vers_id": "boom_inflationniste"
+    },
+    {
+      "mois": "2024-04",
+      "de": "Croissance inflationniste",
+      "vers": "Récession inflationniste",
+      "de_id": "boom_inflationniste",
+      "vers_id": "recession_inflationniste"
+    },
+    {
+      "mois": "2024-05",
+      "de": "Récession inflationniste",
+      "vers": "Croissance inflationniste",
+      "de_id": "recession_inflationniste",
+      "vers_id": "boom_inflationniste"
+    }
+  ]
+}
