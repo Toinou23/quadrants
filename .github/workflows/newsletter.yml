@@ -1,0 +1,35 @@
+# Ce fichier doit être placé dans le dépôt à l'emplacement exact :
+#   .github/workflows/newsletter.yml
+name: Newsletter hebdomadaire des 4 quadrants
+
+on:
+  schedule:
+    - cron: "0 18 * * 5"    # vendredi 18h UTC (~20h Paris l'été, 19h l'hiver)
+  workflow_dispatch: {}      # bouton "Run workflow" pour tester
+
+permissions:
+  contents: write
+
+jobs:
+  newsletter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Envoi de la newsletter
+        env:
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
+        run: python newsletter.py
+
+      - name: Sauvegarde des abonnements traités
+        run: |
+          git config user.name "quadrants-bot"
+          git config user.email "quadrants-bot@users.noreply.github.com"
+          git add -A
+          git commit -m "Newsletter + abonnements" || echo "Rien à publier"
+          git push
