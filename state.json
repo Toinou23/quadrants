@@ -1,5 +1,5 @@
 {
-  "date_calcul": "2026-07-17",
+  "date_calcul": "2026-07-20",
   "dernier_mois": "2026-06",
   "quadrant_id": "boom_inflationniste",
   "quadrant": "Croissance inflationniste",
@@ -10,7 +10,7 @@
   "ecart_croissance_pct": 26.69,
   "ecart_inflation_pct": 88.51,
   "changement_detecte": false,
-  "quadrant_precedent": null,
+  "quadrant_precedent": "Croissance inflationniste",
   "transitions": [
     {
       "mois": "2020-07",
