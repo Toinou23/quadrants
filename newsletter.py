@@ -12,6 +12,7 @@ Sans identifiants email : génère un aperçu docs/newsletter_apercu.html sans e
 """
 import json, os, csv, re, urllib.request, urllib.parse, html as html_mod
 from datetime import date
+import quadrants as Q
 from quadrants import (BASE, DATA, DOCS, process_inbox, send_email, load_subscribers,
                        parse_monthly_adjusted, parse_wti, mail_creds, QUADRANTS)
 
@@ -57,6 +58,13 @@ def pct(a, b):
 
 
 def main():
+    # Filet de sécurité : si l'état ou l'historique n'existe pas encore
+    # (robot quotidien pas encore passé), on les génère à partir des données du dépôt.
+    if not os.path.exists(os.path.join(BASE, "state.json")) \
+            or not os.path.exists(os.path.join(DOCS, "history.csv")):
+        print("state.json / history.csv absents — génération préalable via quadrants.py")
+        Q.main()
+
     process_inbox()
 
     with open(os.path.join(BASE, "state.json"), encoding="utf-8") as f:
