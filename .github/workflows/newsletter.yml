@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Dépendances (graphique de trajectoire)
+        run: pip install matplotlib
+
       - name: Envoi de la newsletter
         env:
           MAIL_USER: ${{ secrets.MAIL_USER }}

@@ -1,3 +1,6 @@
+# Ce fichier doit être placé dans le dépôt à l'emplacement exact :
+#   .github/workflows/quadrants.yml
+# (voir GUIDE.md, étape 4 — il se crée directement depuis le site GitHub)
 name: Mise à jour des 4 quadrants
 
 on:
@@ -21,8 +24,8 @@ jobs:
       - name: Calcul des quadrants
         env:
           ALPHAVANTAGE_KEY: ${{ secrets.ALPHAVANTAGE_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
         run: python quadrants.py
 
       - name: Publication
