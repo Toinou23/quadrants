@@ -1,14 +1,14 @@
 {
   "date_calcul": "2026-10-10",
-  "dernier_mois": "2026-06",
+  "dernier_mois": "2026-09",
   "quadrant_id": "boom_inflationniste",
   "quadrant": "Croissance inflationniste",
   "depuis": "2024-05",
   "actif_roi": "Or, valeurs de rareté",
   "exclu": "obligations",
   "allocations": "Or, valeurs de rareté, matières premières, immobilier. À retirer : obligations longues.",
-  "ecart_croissance_pct": 26.69,
-  "ecart_inflation_pct": 88.51,
+  "ecart_croissance_pct": 9.85,
+  "ecart_inflation_pct": 102.67,
   "changement_detecte": false,
   "quadrant_precedent": "Croissance inflationniste",
   "transitions": [
