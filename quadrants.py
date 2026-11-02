@@ -71,6 +71,8 @@ def refresh_data(key):
         ("gld_monthly.json",  f"https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=GLD&apikey={key}"),
         ("tlt_monthly.json",  f"https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=TLT&apikey={key}"),
         ("wti_monthly.json",  f"https://www.alphavantage.co/query?function=WTI&interval=monthly&apikey={key}"),
+        # Le WTI mensuel est publié avec 1 à 2 mois de retard : le journalier complète les mois récents
+        ("wti_daily.json",    f"https://www.alphavantage.co/query?function=WTI&interval=daily&apikey={key}"),
     ]
     for k, (fname, url) in enumerate(jobs):
         path = os.path.join(DATA, fname)
@@ -79,6 +81,10 @@ def refresh_data(key):
         try:
             j = fetch_json(url)
             ok = ("Monthly Adjusted Time Series" in j) or ("data" in j and len(j.get("data", [])) > 50)
+            if ok and fname == "wti_daily.json":
+                # fichier allégé : seules les 3 dernières années sont utiles
+                limite = f"{date.today().year - 3}-01-01"
+                j["data"] = [x for x in j["data"] if str(x.get("date", "")) >= limite]
             if ok:
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(j, f)
@@ -116,6 +122,27 @@ def parse_wti(path):
             continue
         if v > 0:  # évite une division par zéro dans le ratio ACWI / WTI
             out[row["date"][:7]] = v
+    # Complète les mois postérieurs au dernier mois publié par la moyenne des cours
+    # journaliers (le mensuel officiel arrive avec 1 à 2 mois de retard).
+    daily = os.path.join(os.path.dirname(path), "wti_daily.json")
+    if out and os.path.exists(daily):
+        try:
+            with open(daily, encoding="utf-8") as f:
+                jd = json.load(f)
+            dernier = max(out)
+            par_mois = {}
+            for row in jd.get("data", []):
+                try:
+                    v = float(row["value"])
+                except (ValueError, KeyError, TypeError):
+                    continue
+                m = str(row.get("date", ""))[:7]
+                if v > 0 and m > dernier:
+                    par_mois.setdefault(m, []).append(v)
+            for m, vals in par_mois.items():
+                out[m] = sum(vals) / len(vals)
+        except Exception as e:
+            print(f"WTI journalier illisible ({e}) — mensuel seul utilisé.")
     return out
 
 
