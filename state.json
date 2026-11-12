@@ -1,5 +1,5 @@
 {
-  "date_calcul": "2026-11-11",
+  "date_calcul": "2026-11-12",
   "dernier_mois": "2026-11",
   "quadrant_id": "boom_inflationniste",
   "quadrant": "Croissance inflationniste",
@@ -7,8 +7,8 @@
   "actif_roi": "Or, valeurs de rareté",
   "exclu": "obligations",
   "allocations": "Or, valeurs de rareté, matières premières, immobilier. À retirer : obligations longues.",
-  "ecart_croissance_pct": 4.4,
-  "ecart_inflation_pct": 81.74,
+  "ecart_croissance_pct": 5.6,
+  "ecart_inflation_pct": 79.64,
   "changement_detecte": false,
   "quadrant_precedent": "Croissance inflationniste",
   "transitions": [
